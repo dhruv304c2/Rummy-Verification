@@ -4,8 +4,8 @@ using UnityEngine;
 
 public enum Suits 
 {
-    Spades,
-    Clubs,
-    Diamonds,
-    Hearts
+    Spades = 0,
+    Clubs = 1,
+    Diamonds = 2,
+    Hearts = 3
 }
