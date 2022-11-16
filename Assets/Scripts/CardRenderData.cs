@@ -12,7 +12,7 @@ namespace Game
         public CardRenderData(Card card)
         {
             string text = "";
-            switch (card.Numbers)
+            switch (card.Number)
             {
                 case Numbers.Ace:
                     text += "A";

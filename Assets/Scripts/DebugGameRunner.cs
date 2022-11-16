@@ -3,6 +3,7 @@ using Cards;
 using Types;
 using UnityEngine;
 using Game.Factories;
+using Unity.VisualScripting;
 
 namespace Game
 {
@@ -27,11 +28,6 @@ namespace Game
             
         }
 
-        public void GetSequences(List<Card> hands)
-        {
-            
-        }
-
         [SerializeField] private List<Card> _hand = new List<Card>();
         public List<Card> SelectionList => _hand;
         public CardListRenderer SelectionRenderer => handList;
@@ -42,6 +38,10 @@ namespace Game
             _hand = new List<Card>();
             handList.RenderList(_hand);
         }
-        
+
+        public void GetAllGroups()
+        {
+            Cards.GetGroups(_hand);
+        }
     }
 }

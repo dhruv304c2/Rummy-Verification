@@ -4,12 +4,12 @@ namespace Cards
 {
     public struct Card
     {
-        public Numbers Numbers;
+        public Numbers Number;
         public Suits Suit;
 
-        public Card(Numbers numbers, Suits suit)
+        public Card(Numbers number, Suits suit)
         {
-            Numbers = numbers;
+            Number = number;
             Suit = suit;
         }
     }
