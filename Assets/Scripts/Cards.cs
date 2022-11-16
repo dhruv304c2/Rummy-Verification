@@ -40,11 +40,13 @@ namespace Game
             TotalGroups.AddRange(GetPureSequence(clubs));
             TotalGroups.AddRange(GetPureSequence(hearts));
             TotalGroups.AddRange(GetPureSequence(diamonds));
-            //TotalGroups.AddRange(GetAllSets(hand));
+            TotalGroups.AddRange(GetAllSets(hand));
 
+            var AllHands = GetAllPossibleHands(TotalGroups, hand);
+            
             //Print text
-            string text = "";
-            foreach (var group in TotalGroups)
+            string text = "Groups:\n";
+            foreach (var group in AllHands)
             {
                 foreach (var card in group)
                 {
@@ -56,8 +58,74 @@ namespace Game
             
             Debug.Log(text);
         }
+
+        private static List<Card[]> GetAllPossibleHands(List<Card[]> groups, List<Card> hand)
+        {
+            List<Card[]> AllHands = new List<Card[]>();
+            
+            for (int i = 0; i < groups.Count-1; i++)
+            {
+                List<Card> _hand = new List<Card>(groups[i]);
+                for (int j = 0; j < groups.Count; j++)
+                {
+                    List<Card> _tempHand = new List<Card>(_hand);
+                    _tempHand.AddRange(groups[j]);
+
+                    if (CheckSubset(_tempHand, hand) == true)
+                    {
+                        _hand = _tempHand;
+                    }
+                }
+                AllHands.Add(_hand.ToArray());
+            }
+
+            return AllHands;
+        }
+
+        private static List<Card[]> GetPureSequence(List<Card> cards)
+        {
+            List<Card[]> Sequences = new List<Card[]>();
+
+            if (cards.Count == 0) return Sequences;
+            
+            cards.Sort((a, b) => { return (int)a.Number - (int)b.Number;});
+
+            for (int j = 1; j < cards.Count; j++)
+            {
+                List<Card> sequence = new List<Card>();
+                sequence.Add(cards[j-1]);
+                
+                for (int i = j; i < cards.Count; i++)
+                {
+                    if (sequence.Count == 4) //No array with size above 4 are allowed.
+                    {
+                        sequence = new List<Card>();
+                        continue;
+                    }
+                    
+                    if ((int)cards[i].Number - (int)cards[i-1].Number == 1)
+                    {
+                        sequence.Add(cards[i]);
+                        if (sequence.Count >= 3)
+                        {
+                            Sequences.Add(sequence.ToArray());
+                            var temp = sequence;
+                            sequence = new List<Card>(temp);
+                        }
+                    }
+                    else
+                    {
+                        sequence = new List<Card>();
+                        sequence.Add(cards[i]);
+                    }
+                }
+            }
+            Sequences = RemoveDuplicates(Sequences);
+            Sequences.Sort((a, b) => { return a[0].Number - b[0].Number;});
+            return Sequences;
+        }
         
-        public static List<Card[]> GetPureSequence(List<Card> cards)
+        private static List<Card[]> GetAllSets(List<Card> cards)
         {
             List<Card[]> Sequences = new List<Card[]>();
 
@@ -78,12 +146,13 @@ namespace Game
                         continue;
                     }
                     
-                    if ((int)cards[i].Number - (int)cards[i-1].Number == 1)
+                    if ((int)cards[i].Number - (int)cards[i-1].Number == 0)
                     {
                         sequence.Add(cards[i]);
                         if (sequence.Count >= 3)
                         {
-                            Sequences.Add(sequence.ToArray());
+                            if(!HasDuplicateCards(sequence.ToArray())) // Add sets only if they don't have duplicate cards.
+                                Sequences.Add(sequence.ToArray());
                             var temp = sequence;
                             sequence = new List<Card>(temp);
                         }
@@ -128,36 +197,42 @@ namespace Game
             return false;
         }
 
-        public static List<List<Card>> GetAllSets(List<Card> cards)
+        public static bool HasDuplicateCards(Card[] cards)
         {
-            List<List<Card>> Sets = new List<List<Card>>();
-            
-            if (cards.Count == 0) return Sets;
-            
-            cards.Sort((a, b) => { return (int)a.Number - (int)b.Number;});
-            
-            List<Card> Set = new List<Card>();
-            Set.Add(cards[0]);
-            
-            for (int i = 1; i < cards.Count; i++)
+            HashSet<Card> cardSet = new HashSet<Card>();
+            foreach (var card in cards)
             {
-                if ((int)cards[i].Number - (int)cards[i-1].Number == 0|| Set.Count == 0)
+                cardSet.Add(card);
+            }
+
+            return cardSet.Count != cards.Length;
+        }
+
+        public static int GetCardCount(Card card,List<Card> cards)
+        {
+            int count = 0;
+            foreach (var card1 in cards)
+            {
+                if (card1.Number == card.Number && card.Suit == card1.Suit)
                 {
-                    Set.Add(cards[i]);
-                    if (Set.Count >= 3)
-                    {
-                        Sets.Add(Set);
-                        var temp = Set;
-                        Set = new List<Card>(temp);
-                    }
-                }
-                else
-                {
-                    Set = new List<Card>();
+                    count++;
                 }
             }
 
-            return Sets;
+            return count;
+        }
+
+        public static bool CheckSubset(List<Card> subset, List<Card> set)
+        {
+            foreach (var card in subset)
+            {
+                if (GetCardCount(card, subset) != GetCardCount(card, set))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

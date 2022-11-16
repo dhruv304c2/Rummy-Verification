@@ -14,10 +14,10 @@ namespace Game
             _selectionController = selectionController;
         }
 
-        private void OnMouseUp()
+        /*private void OnMouseUp()
         {
             Select();
-        }
+        }*/
 
         public void Select()
         {
