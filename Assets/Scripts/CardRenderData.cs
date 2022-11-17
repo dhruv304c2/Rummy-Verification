@@ -53,6 +53,9 @@ namespace Game
                 case Numbers.King:
                     text += "K";
                     break;
+                case Numbers.Wild:
+                    text += "Joker";
+                    break;
             }
 
             switch (card.Suit)
@@ -72,6 +75,9 @@ namespace Game
                 case Suits.Hearts:
                     text += "♥";
                     Color = Color.red;
+                    break;
+                case Suits.Wild:
+                    Color = Color.black;
                     break;
             }
 

@@ -29,6 +29,8 @@ namespace Game
                 }
             }
             
+            fullDeck.Add(new Card(Numbers.Wild, Suits.Wild)); //Adding joker.
+            
             buttonsHolder.RenderButtonList(fullDeck, this);
             
         }

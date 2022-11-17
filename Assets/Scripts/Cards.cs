@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Cards;
+using Types;
 using UnityEngine;
 using Hand = System.Collections.Generic.List<Cards.Card[]>;
 
@@ -15,6 +16,11 @@ namespace Game
             List<Card> clubs = new List<Card>();
             List<Card> hearts = new List<Card>();
             List<Card> diamonds = new List<Card>();
+
+            var Original = new List<Card>(hand); // save original card list 
+            
+            int JokerCount = GetJokerCount(hand); // getting joker count
+            hand = RemoveJokers(hand); // remove jokers
 
             foreach (var card in hand)
             {
@@ -40,16 +46,16 @@ namespace Game
             List<Card[]> AllSequences = new List<Card[]>();
             List<Card[]> AllSets = new List<Card[]>();
 
-            AllSequences.AddRange(GetPureSequence(spades));
-            AllSequences.AddRange(GetPureSequence(clubs));
-            AllSequences.AddRange(GetPureSequence(hearts));
-            AllSequences.AddRange(GetPureSequence(diamonds));
-            AllSets.AddRange(GetAllSets(hand));
+            AllSequences.AddRange(GetSequence(spades, JokerCount));
+            AllSequences.AddRange(GetSequence(clubs, JokerCount));
+            AllSequences.AddRange(GetSequence(hearts, JokerCount));
+            AllSequences.AddRange(GetSequence(diamonds, JokerCount));
+            AllSets.AddRange(GetAllSets(hand, JokerCount));
             
             TotalGroups.AddRange(AllSequences);
             TotalGroups.AddRange(AllSets);
 
-            var AllHands = GetAllPossibleHands(TotalGroups, hand);
+            var AllHands = GetAllPossibleHands(TotalGroups, Original);
 
             //Getting valid Hands
             var ValidHands = AllHands.Where((a) => { return IsHandValid(a); }).ToList();
@@ -131,8 +137,6 @@ namespace Game
                         }
                     }
                 }
-                
-                
             }
 
             return AllHands;
@@ -150,14 +154,14 @@ namespace Game
                 List<Card> groupList = new List<Card>();
                 groupList.AddRange(group);
 
-                if (GetPureSequence(groupList).Count >= 1)
+                if (GetSequence(groupList).Count >= 1)
                     sequenceCount++;
             }
 
             return cardCount == 13 && sequenceCount >= 2;
         }
 
-        private static List<Card[]> GetPureSequence(List<Card> cards)
+        private static List<Card[]> GetSequence(List<Card> cards, int Jokers = 0)
         {
             List<Card[]> Sequences = new List<Card[]>();
 
@@ -165,10 +169,13 @@ namespace Game
             
             cards.Sort((a, b) => { return (int)a.Number - (int)b.Number;});
 
-            for (int j = 1; j < cards.Count; j++)
+            for (int j = 1; j <= cards.Count; j++)
             {
                 List<Card> sequence = new List<Card>();
                 sequence.Add(cards[j-1]);
+                
+                Card lastAdded = cards[j-1];
+                int jokers = Jokers;
                 
                 for (int i = j; i < cards.Count; i++)
                 {
@@ -177,25 +184,48 @@ namespace Game
                         break;
                     }
                     
-                    if ((int)cards[i].Number - (int)sequence[sequence.Count -1].Number == 1)
+                    if ((int)cards[i].Number - (int)lastAdded.Number == 1)
                     {
                         sequence.Add(cards[i]);
-                        
-                        if (sequence.Count >= 3)
-                        {
-                            Sequences.Add(sequence.ToArray());
-                            var temp = sequence;
-                            sequence = new List<Card>(temp);
-                        }
+                        lastAdded = cards[i];
+                    }
+                    else if (jokers > 0)
+                    {
+                        sequence.Add(new Card(Numbers.Wild,Suits.Wild));
+                        jokers--;
+                        i--;
+                    }
+                    
+                    if (sequence.Count >= 3)
+                    {
+                        Sequences.Add(sequence.ToArray());
+                        var temp = sequence;
+                        sequence = new List<Card>(temp);
+                    }
+                }
+
+                if (sequence[sequence.Count - 1].Number < Numbers.King) // Don't extend king using jokers
+                {
+                    if (sequence.Count + jokers > 2)
+                    {
+                        sequence.Add(new Card(Numbers.Wild,Suits.Wild));
+                        Sequences.Add(sequence.ToArray());
+                    }
+
+                    if (sequence.Count + jokers > 3)
+                    {
+                        sequence.Add(new Card(Numbers.Wild,Suits.Wild));
+                        Sequences.Add(sequence.ToArray());
                     }
                 }
             }
+            
             //Sequences = RemoveDuplicates(Sequences);
             Sequences.Sort((a, b) => { return a[0].Number - b[0].Number;});
             return Sequences;
         }
         
-        private static List<Card[]> GetAllSets(List<Card> cards)
+        private static List<Card[]> GetAllSets(List<Card> cards, int Jokers = 0)
         {
             List<Card[]> Sets = new List<Card[]>();
 
@@ -203,10 +233,13 @@ namespace Game
             
             cards.Sort((a, b) => { return (int)a.Number - (int)b.Number;});
 
-            for (int j = 1; j < cards.Count; j++)
+            for (int j = 1; j <= cards.Count; j++)
             {
                 List<Card> set = new List<Card>();
                 set.Add(cards[j-1]);
+                
+                Card lastAdded = cards[j-1];
+                int jokers = Jokers;
                 
                 for (int i = j; i < cards.Count; i++)
                 {
@@ -215,19 +248,39 @@ namespace Game
                         break;
                     }
                     
-                    if ((int)cards[i].Number - (int)set[set.Count -1].Number == 0)
+                    if ((int)cards[i].Number - (int)lastAdded.Number == 0)
                     {
                         set.Add(cards[i]);
-                        
-                        if (set.Count >= 3)
-                        {
-                            Sets.Add(set.ToArray());
-                            var temp = set;
-                            set = new List<Card>(temp);
-                        }
+                        lastAdded = cards[i];
+                    }
+                    else if (jokers > 0)
+                    {
+                        set.Add(new Card(Numbers.Wild,Suits.Wild));
+                        jokers--;
+                        i--;
+                    }
+                    
+                    if (set.Count >= 3)
+                    {
+                        Sets.Add(set.ToArray());
+                        var temp = set;
+                        set = new List<Card>(temp);
                     }
                 }
+                
+                if (set.Count + jokers > 2)
+                {
+                    set.Add(new Card(Numbers.Wild,Suits.Wild));
+                    Sets.Add(set.ToArray());
+                }
+
+                if (set.Count + jokers > 3)
+                {
+                    set.Add(new Card(Numbers.Wild,Suits.Wild));
+                    Sets.Add(set.ToArray());
+                }
             }
+            
             //Sequences = RemoveDuplicates(Sequences);
             Sets.Sort((a, b) => { return a[0].Number - b[0].Number;});
             return Sets;
@@ -295,8 +348,30 @@ namespace Game
                     return false;
                 }
             }
-
             return true;
+        }
+
+        public static int GetJokerCount(List<Card> cards)
+        {
+            int count = 0;
+            foreach (var card in cards)
+            {
+                if (card.Number == Numbers.Wild && card.Suit == Suits.Wild)
+                    count++;
+            }
+            return count;
+        }
+
+        public static List<Card> RemoveJokers(List<Card> cards)
+        {
+            List<Card> filteredList = new List<Card>();
+
+            foreach (var card in cards)
+            {
+                if(card.Number != Numbers.Wild && card.Suit != Suits.Wild)
+                    filteredList.Add(card);
+            }
+            return filteredList;
         }
     }
 }

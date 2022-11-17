@@ -14,6 +14,7 @@
         Ten = 9,
         Jack = 10,
         Queen = 11,
-        King = 12
+        King = 12,
+        Wild = 14
     }
 }
