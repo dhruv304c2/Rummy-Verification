@@ -3,6 +3,7 @@ using Cards;
 using Types;
 using UnityEngine;
 using Game.Factories;
+using JetBrains.Annotations;
 using Unity.VisualScripting;
 
 namespace Game
@@ -10,6 +11,10 @@ namespace Game
     public class DebugGameRunner : MonoBehaviour, ISelectionController
     {
         public CardListRenderer handList;
+        public CardListRenderer group1Renderer;
+        public CardListRenderer group2Renderer;
+        public CardListRenderer group3Renderer;
+        public CardListRenderer group4Renderer;
         public CardButtonsHolder buttonsHolder;
         private void Start()
         {
@@ -41,7 +46,12 @@ namespace Game
 
         public void GetAllGroups()
         {
-            Cards.GetGroups(_hand);
+            var groups = Cards.GetGroups(_hand);
+
+            group1Renderer.RenderList(groups[0]);
+            group2Renderer.RenderList(groups[1]);
+            group3Renderer.RenderList(groups[2]);
+            group4Renderer.RenderList(groups[3]);
         }
     }
 }

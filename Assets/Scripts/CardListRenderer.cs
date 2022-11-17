@@ -23,6 +23,19 @@ namespace Game
                 });
             }
         }
+        
+        public void RenderList(Card[] list)
+        {
+            currentList = new List<Card>(list);
+            
+            cardRoot.ClearGrid();
+            foreach (var card in list)
+            {
+                CardFactory.FabricateCard(card,"Card", Vector3.zero, null, (c) => {
+                    cardRoot.AddToGrid(c);
+                });
+            }
+        }
 
         public void AddCardToList(Card card)
         {

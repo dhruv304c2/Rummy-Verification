@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Cards;
 using UnityEngine;
+using Hand = System.Collections.Generic.List<Cards.Card[]>;
 
 namespace Game
 {
     public static class Cards
     {
-        public static void GetGroups(List<Card> hand)
+        public static List<Card[]> GetGroups(List<Card> hand)
         {
             //Separate Suits
             List<Card> spades = new List<Card>();
@@ -35,18 +37,39 @@ namespace Game
 
             //Getting all possible groups
             List<Card[]> TotalGroups = new List<Card[]>();
+            List<Card[]> AllSequences = new List<Card[]>();
+            List<Card[]> AllSets = new List<Card[]>();
 
-            TotalGroups.AddRange(GetPureSequence(spades));
-            TotalGroups.AddRange(GetPureSequence(clubs));
-            TotalGroups.AddRange(GetPureSequence(hearts));
-            TotalGroups.AddRange(GetPureSequence(diamonds));
-            TotalGroups.AddRange(GetAllSets(hand));
+            AllSequences.AddRange(GetPureSequence(spades));
+            AllSequences.AddRange(GetPureSequence(clubs));
+            AllSequences.AddRange(GetPureSequence(hearts));
+            AllSequences.AddRange(GetPureSequence(diamonds));
+            AllSets.AddRange(GetAllSets(hand));
+            
+            TotalGroups.AddRange(AllSequences);
+            TotalGroups.AddRange(AllSets);
 
             var AllHands = GetAllPossibleHands(TotalGroups, hand);
+
+            //Getting valid Hands
+            var ValidHands = AllHands.Where((a) => { return IsHandValid(a); }).ToList();
             
-            //Print text
-            string text = "Groups:\n";
-            foreach (var group in AllHands)
+            //Print valid hands text
+            
+            string text = "Sequences:\n";
+            foreach (var group in AllSequences)
+            {
+                foreach (var card in group)
+                {
+                    text += new CardRenderData(card).CardText;
+                }
+
+                text += "\n";
+            }
+            Debug.Log(text);
+            
+            text = "Sets:\n";
+            foreach (var group in AllSets)
             {
                 foreach (var card in group)
                 {
@@ -57,29 +80,81 @@ namespace Game
             }
             
             Debug.Log(text);
+            
+            text = "Groups:\n";
+            foreach (var group in AllHands)
+            {
+                foreach (var cards in group)
+                {
+                    foreach (var card in cards)
+                    {
+                        text += new CardRenderData(card).CardText;
+                    }
+                    text += "\n";
+                }
+
+                text += "\n";
+            }
+            
+            Debug.Log(text);
+
+            return ValidHands[0];
         }
 
-        private static List<Card[]> GetAllPossibleHands(List<Card[]> groups, List<Card> hand)
+        private static List<List<Card[]>> GetAllPossibleHands(List<Card[]> groups, List<Card> hand)
         {
-            List<Card[]> AllHands = new List<Card[]>();
+            List<List<Card[]>> AllHands = new List<List<Card[]>>();
+            List<Card[]> group = new Hand(); 
             
-            for (int i = 0; i < groups.Count-1; i++)
+            // nested loops to get all possible ways of selecting 4 groups
+            for (int i = 0; i < groups.Count; i++)
             {
-                List<Card> _hand = new List<Card>(groups[i]);
-                for (int j = 0; j < groups.Count; j++)
+                group = new Hand();
+                for (int j = i+1; j < groups.Count; j++)
                 {
-                    List<Card> _tempHand = new List<Card>(_hand);
-                    _tempHand.AddRange(groups[j]);
-
-                    if (CheckSubset(_tempHand, hand) == true)
+                    for (int k = j+1; k < groups.Count; k++)
                     {
-                        _hand = _tempHand;
+                        for (int l = k+1; l < groups.Count; l++)
+                        {
+                            group = new List<Card[]>(){groups[i], groups[j], groups[k], groups[l]};
+                            
+                            List<Card> _tempHand = new List<Card>();
+                            foreach (var _group in group)
+                            {
+                                foreach (var card in _group)
+                                {
+                                    _tempHand.Add(card);
+                                }
+                            }
+                            
+                            if(CheckSubset(_tempHand,hand)) AllHands.Add(group);
+                        }
                     }
                 }
-                AllHands.Add(_hand.ToArray());
+                
+                
             }
 
             return AllHands;
+        }
+
+        private static bool IsHandValid(Hand hand)
+        {
+            int sequenceCount = 0;
+            int cardCount = 0;
+
+            List<Card> flattenHand = new List<Card>();
+            foreach (var group in hand)
+            {
+                cardCount += group.Length;
+                List<Card> groupList = new List<Card>();
+                groupList.AddRange(group);
+
+                if (GetPureSequence(groupList).Count >= 1)
+                    sequenceCount++;
+            }
+
+            return cardCount == 13 && sequenceCount >= 2;
         }
 
         private static List<Card[]> GetPureSequence(List<Card> cards)
@@ -99,13 +174,13 @@ namespace Game
                 {
                     if (sequence.Count == 4) //No array with size above 4 are allowed.
                     {
-                        sequence = new List<Card>();
-                        continue;
+                        break;
                     }
                     
-                    if ((int)cards[i].Number - (int)cards[i-1].Number == 1)
+                    if ((int)cards[i].Number - (int)sequence[sequence.Count -1].Number == 1)
                     {
                         sequence.Add(cards[i]);
+                        
                         if (sequence.Count >= 3)
                         {
                             Sequences.Add(sequence.ToArray());
@@ -113,60 +188,49 @@ namespace Game
                             sequence = new List<Card>(temp);
                         }
                     }
-                    else
-                    {
-                        sequence = new List<Card>();
-                        sequence.Add(cards[i]);
-                    }
                 }
             }
-            Sequences = RemoveDuplicates(Sequences);
+            //Sequences = RemoveDuplicates(Sequences);
             Sequences.Sort((a, b) => { return a[0].Number - b[0].Number;});
             return Sequences;
         }
         
         private static List<Card[]> GetAllSets(List<Card> cards)
         {
-            List<Card[]> Sequences = new List<Card[]>();
+            List<Card[]> Sets = new List<Card[]>();
 
-            if (cards.Count == 0) return Sequences;
+            if (cards.Count == 0) return Sets;
             
             cards.Sort((a, b) => { return (int)a.Number - (int)b.Number;});
 
             for (int j = 1; j < cards.Count; j++)
             {
-                List<Card> sequence = new List<Card>();
-                sequence.Add(cards[j-1]);
+                List<Card> set = new List<Card>();
+                set.Add(cards[j-1]);
                 
                 for (int i = j; i < cards.Count; i++)
                 {
-                    if (sequence.Count == 4)
+                    if (set.Count == 4) //No array with size above 4 are allowed.
                     {
-                        sequence = new List<Card>();
-                        continue;
+                        break;
                     }
                     
-                    if ((int)cards[i].Number - (int)cards[i-1].Number == 0)
+                    if ((int)cards[i].Number - (int)set[set.Count -1].Number == 0)
                     {
-                        sequence.Add(cards[i]);
-                        if (sequence.Count >= 3)
+                        set.Add(cards[i]);
+                        
+                        if (set.Count >= 3)
                         {
-                            if(!HasDuplicateCards(sequence.ToArray())) // Add sets only if they don't have duplicate cards.
-                                Sequences.Add(sequence.ToArray());
-                            var temp = sequence;
-                            sequence = new List<Card>(temp);
+                            Sets.Add(set.ToArray());
+                            var temp = set;
+                            set = new List<Card>(temp);
                         }
-                    }
-                    else
-                    {
-                        sequence = new List<Card>();
-                        sequence.Add(cards[i]);
                     }
                 }
             }
-            Sequences = RemoveDuplicates(Sequences);
-            Sequences.Sort((a, b) => { return a[0].Number - b[0].Number;});
-            return Sequences;
+            //Sequences = RemoveDuplicates(Sequences);
+            Sets.Sort((a, b) => { return a[0].Number - b[0].Number;});
+            return Sets;
         }
 
         public static List<Card[]> RemoveDuplicates(List<Card[]> groups)
