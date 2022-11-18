@@ -33,6 +33,8 @@ namespace Game
             
             buttonsHolder.RenderButtonList(fullDeck, this);
             
+            GameLogger.Log("");
+            
         }
 
         [SerializeField] private List<Card> _hand = new List<Card>();
@@ -46,14 +48,29 @@ namespace Game
             handList.RenderList(_hand);
         }
 
+        public void RemoveOne()
+        {
+            _hand.RemoveAt(_hand.Count - 1);
+            handList.RenderList(_hand);
+        }
+
         public void GetAllGroups()
         {
             var groups = Cards.GetGroups(_hand);
 
-            group1Renderer.RenderList(groups[0]);
-            group2Renderer.RenderList(groups[1]);
-            group3Renderer.RenderList(groups[2]);
-            group4Renderer.RenderList(groups[3]);
+            if (groups != null)
+            {
+                GameLogger.Log("Rummy!!");
+                group1Renderer.RenderList(groups[0]);
+                group2Renderer.RenderList(groups[1]);
+                group3Renderer.RenderList(groups[2]);
+                group4Renderer.RenderList(groups[3]); 
+            }
+            else
+            {
+                GameLogger.LogError($"Cannot not declare rummy win conditions not satisfied");
+            }
+            
         }
     }
 }

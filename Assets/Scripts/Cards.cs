@@ -59,9 +59,10 @@ namespace Game
 
             //Getting valid Hands
             var ValidHands = AllHands.Where((a) => { return IsHandValid(a); }).ToList();
-            
-            //Print valid hands text
-            
+
+            #region Debug Text
+
+            //Debug text
             string text = "Sequences:\n";
             foreach (var group in AllSequences)
             {
@@ -104,7 +105,10 @@ namespace Game
             
             Debug.Log(text);
 
-            return ValidHands[0];
+            #endregion
+            
+            if(ValidHands.Count >0 )return ValidHands[0];
+            return null;
         }
 
         private static List<List<Card[]>> GetAllPossibleHands(List<Card[]> groups, List<Card> hand)
@@ -281,7 +285,7 @@ namespace Game
                 }
             }
             
-            //Sequences = RemoveDuplicates(Sequences);
+            Sets = RemoveDuplicates(Sets);
             Sets.Sort((a, b) => { return a[0].Number - b[0].Number;});
             return Sets;
         }

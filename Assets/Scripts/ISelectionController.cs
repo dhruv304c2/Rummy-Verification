@@ -12,18 +12,25 @@ namespace Game
 
         public void AddSelection(Card card)
         {
+            if (Cards.GetCardCount(card, SelectionList) >= 2)
+            {
+                GameLogger.LogError("Already have two of this card");
+                return;
+            }
+            
             if (SelectionList.Count < MaxSelections)
             {
-                Debug.Log("Selection Made");
+                GameLogger.Log("");
                 SelectionList.Add(card);
                 SelectionRenderer.RenderList(SelectionList);
             }
             else
             {
-                Debug.Log("Selection capacity reached");
+                GameLogger.LogError("Selection capacity reached");
             }
         }
 
         public void ClearSelection();
+        public void RemoveOne();
     }
 }
